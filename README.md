@@ -2,7 +2,7 @@
 
 <!-- <img src="figures/logo.png" width="400px"> -->
 
-**A suit of open-source LLMs optimized for reasoning**
+**Eurus: A suit of open-source LLMs optimized for reasoning**
 
 <p align="center">
  <a href="#introduction"> Introduction</a> •
@@ -23,9 +23,9 @@
 
 # Introduction
 
-Finetuned from Mistral-7B and CodeLlama-70B, EURUS models achieve state-of-the-art results among open-source models on a diverse set of benchmarks covering mathematics, code generation, and logical reasoning problems. Notably, **EURUS-70B beats GPT-3.5 Turbo in reasoning through a comprehensive benchmarking across 12 tests covering five tasks**, and achieves a 33.3% pass@1 accuracy on LeetCode and 32.6% on TheoremQA, two challenging benchmarks, substantially outperforming existing open-source models by margins more than 13.3%. We also train a reward model which demonstrates especially strong preference modeling performance on reasoning tasks. 
+Finetuned from Mistral-7B and CodeLlama-70B, Eurus models achieve state-of-the-art results among open-source models on a diverse set of benchmarks covering mathematics, code generation, and logical reasoning problems. Notably, **Eurus-70B beats GPT-3.5 Turbo in reasoning through a comprehensive benchmarking across 12 tests covering five tasks**, and achieves a 33.3% pass@1 accuracy on LeetCode and 32.6% on TheoremQA, two challenging benchmarks, substantially outperforming existing open-source models by margins more than 13.3%. We also train a reward model which demonstrates especially strong preference modeling performance on reasoning tasks. 
 
-The strong performance of EURUS can be primarily attributed to UltraInteract, a large-scale, high-quality alignment dataset specifically designed for complex reasoning tasks. UltraInteract can be used in both supervised fine-tuning and preference learning. For each instruction, it includes a preference tree consisting of (1) reasoning chains with diverse planning strategies in a unified format, (2) multi-turn interaction trajectories with the environment and the critique, and (3) pairwise data to facilitate preference learning. 
+The strong performance of Eurus can be primarily attributed to UltraInteract, a large-scale, high-quality alignment dataset specifically designed for complex reasoning tasks. UltraInteract can be used in both supervised fine-tuning and preference learning. For each instruction, it includes a preference tree consisting of (1) reasoning chains with diverse planning strategies in a unified format, (2) multi-turn interaction trajectories with the environment and the critique, and (3) pairwise data to facilitate preference learning. 
 
 <img src="figures/lc_tqa.png" width="800px">
 
@@ -50,15 +50,9 @@ We release a suite of LLMs and a reward model.
 - Eurus-7B-SFT and Eurus-70B-SFT: Fine-tuned from Mistral-7B and CodeLLaMA-70B on all correct actions in UltraInteract, mixing a small proportion of UltraChat, ShareGPT, and OpenOrca examples.
 - Eurus-7B-KTO and Eurus-70B-NCA: Preference fine-tuned on UltraInteract and UltraFeedback on top of SFT models.
 - Eurus-RM-7B: Trained on a mixture of UltraInteract, UltraFeedback, and UltraSafet, with a specifically designed objective for reasoning:
-$$
-\mathcal{L}_{UltraInteract} = 
-\underbrace{
--\log\Bigl(\sigma \bigl(r_{\theta}(x, y_{c})-r_{\theta}(x, y_{r})\bigr)\Bigr)
-}_\text{$\mathcal{L_{\text{BT}}}$: optimize relative rewards} 
-\underbrace{
--\log\Bigl(\sigma \bigl(r_{\theta}(x, y_{c})\bigr)\Bigr) -\log\Bigl(\sigma \bigl(-r_{\theta}(x, y_{r})\bigr)\Bigr)
-}_\text{$\mathcal{L_{\text{DR}}}$: increase $r_{\theta}(x, y_{c})$ and decrease $r_{\theta}(x, y_{r})$}
-$$
+
+<img src="figures/rm_loss.png" width="650px">
+
 # Evaluation
 
 ## Eurus-7B and Eurus-70B
