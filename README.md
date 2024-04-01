@@ -34,13 +34,13 @@ The strong performance of EURUS can be primarily attributed to UltraInteract, a 
 Conceptually, UltraInteract collects a preference tree for each instruction, with the instruction being the root and each action a node (Figure 2). A trajectory is a root-to-leaf path consisting of a sequence of actions. In each preference tree, all nodes of correct actions and all trajectories ending with correct actions can be used for SFT. Paired correct and incorrect nodes or trajectories can be used for preference learning.
 
 ## Structure
-<img src="figures/tree.png" width="600px">
+<img src="figures/tree.png" width="500px">
 
 ## Illustrative Example
 <img src="figures/ui_example.png" width="800px">
 
 ## Stats
-<img src="figures/stats.png" width="600px">
+<img src="figures/stats.png" width="800px">
 
 
 # Eurus
