@@ -16,8 +16,8 @@
 # Links
 
 - 📜 [Paper]()
-- 🤗 [Eurus Collection]()
-- 🤗 [UltraInteract]()
+- 🤗 [Eurus Collection](https://huggingface.co/collections/openbmb/eurus-660bc40bec5376b3adc9d1c5)
+- 🤗 [UltraInteract](https://huggingface.co/datasets/openbmb/UltraInteract)
 
 # Introduction
 
@@ -67,12 +67,21 @@ Conceptually, UltraInteract collects a preference tree for each instruction, wit
 
 
 # Dataset Format
+
+## SFT
 ```jsonc
 {
 
 }
 ```
 
+
+## Preference Learning
+```jsonc
+{
+
+}
+```
 
 
 
