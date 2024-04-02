@@ -17,8 +17,9 @@
 
 - 📜 [Paper]()
 - 🤗 [Eurus Collection](https://huggingface.co/collections/openbmb/eurus-660bc40bec5376b3adc9d1c5)
-- 🤗 [UltraInteract](https://huggingface.co/datasets/openbmb/UltraInteract)
-
+- 🤗 UltraInteract
+  - [SFT](https://huggingface.co/datasets/openbmb/UltraInteract_sft)
+  - [Preference Learning](https://huggingface.co/datasets/openbmb/UltraInteract_pair) 
 # Introduction
 
 ## Eurus
