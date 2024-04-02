@@ -15,7 +15,7 @@
 
 # Links
 
-- 📜 [Paper]()
+- 📜 [Paper](https://github.com/OpenBMB/Eurus/blob/main/paper.pdf)
 - 🤗 [Eurus Collection](https://huggingface.co/collections/openbmb/eurus-660bc40bec5376b3adc9d1c5)
 - 🤗 UltraInteract
   - [SFT](https://huggingface.co/datasets/openbmb/UltraInteract_sft)
