@@ -34,9 +34,10 @@ We release a suite of LLMs and a reward model. **Eurus-70B beats GPT-3.5 Turbo i
 
 ## UltraInteract
 
-The strong performance of Eurus can be primarily attributed to UltraInteract, a large-scale, high-quality alignment dataset specifically designed for complex reasoning tasks. For each instruction, it includes a preference tree consisting of (1) reasoning chains with diverse planning strategies in a unified format, (2) multi-turn interaction trajectories with the environment and the critique, and (3) pairwise data to facilitate preference learning. 
-
-Conceptually, UltraInteract collects a preference tree for each instruction, with the instruction being the root and each action a node (Figure 2). A trajectory is a root-to-leaf path consisting of a sequence of actions. In each preference tree, all nodes of correct actions and all trajectories ending with correct actions can be used for SFT. Paired correct and incorrect nodes or trajectories can be used for preference learning.
+The strong performance of Eurus can be primarily attributed to UltraInteract, a large-scale, high-quality alignment dataset specifically designed for complex reasoning tasks. For each instruction, it includes a preference tree consisting of 
+- (1) reasoning chains with diverse planning strategies in a unified format
+- (2) multi-turn interaction trajectories with the environment and the critique
+- (3) pairwise data to facilitate preference learning
 
 ### Structure
 UltraInteract collects a preference tree for each instruction, with the instruction being the root and each action a node. A trajectory is a root-to-leaf path consisting of a sequence of actions.
