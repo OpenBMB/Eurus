@@ -23,13 +23,13 @@
 
 ## Eurus
 
-<img src="figures/leetcode_vs_theoremqa-1.png" width="800px">
+<img src="figures/leetcode_vs_theoremqa-1.png" width="500px">
 
 We release a suite of LLMs and a reward model. **Eurus-70B beats GPT-3.5 Turbo in reasoning through a comprehensive benchmarking across 12 tests covering five tasks**, and achieves a 33.3% pass@1 accuracy on LeetCode and 32.6% on TheoremQA, two challenging benchmarks, substantially outperforming existing open-source models by margins more than 13.3%. We also train a reward model that demonstrates especially strong preference modeling performance on reasoning tasks. 
 
 - *Eurus-7B-SFT* and *Eurus-70B-SFT*: Fine-tuned from Mistral-7B and CodeLLaMA-70B on all correct actions in UltraInteract, mixing a small proportion of UltraChat, ShareGPT, and OpenOrca examples.
 - *Eurus-7B-KTO* and *Eurus-70B-NCA*: Preference fine-tuned on UltraInteract and UltraFeedback on top of SFT models.
-- *Eurus-RM-7B*: Trained on a mixture of UltraInteract, UltraFeedback, and UltraSafet.
+- *Eurus-RM-7B*: Trained on a mixture of UltraInteract, UltraFeedback, and UltraSafety.
 
 
 ## UltraInteract
@@ -39,12 +39,19 @@ The strong performance of Eurus can be primarily attributed to UltraInteract, a 
 Conceptually, UltraInteract collects a preference tree for each instruction, with the instruction being the root and each action a node (Figure 2). A trajectory is a root-to-leaf path consisting of a sequence of actions. In each preference tree, all nodes of correct actions and all trajectories ending with correct actions can be used for SFT. Paired correct and incorrect nodes or trajectories can be used for preference learning.
 
 ### Structure
+UltraInteract collects a preference tree for each instruction, with the instruction being the root and each action a node. A trajectory is a root-to-leaf path consisting of a sequence of actions.
+In each preference tree, all nodes of correct actions and all trajectories ending with correct actions can be used for SFT. Paired correct and incorrect nodes or trajectories can be used for preference learning.
+
 <img src="figures/tree-1.png" width="500px">
 
 ### Illustrative Example
+Here is an illustrative example of an UltraInteract trajectory over two turns. In each turn, the actor model generates step-by-step reasoning chains, and the environment and the critique model provide observations and textual critique respectively.
+
 <img src="figures/ui-1.png" width="800px">
 
 ### Stats
+Below are some statistics about UltraInteract. It consists of 86k instructions, 286k correct answers, and 219k pairs.
+
 <img src="figures/stats.png" width="800px">
 
 
