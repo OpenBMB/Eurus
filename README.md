@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="figures/logo.png" width="300px">
+<img src="figures/Eurus-logo.png" width="300px">
 
 **Eurus: A suit of open-source LLMs optimized for reasoning**
 
