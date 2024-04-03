@@ -214,6 +214,8 @@ Below are some statistics about UltraInteract. It consists of 86k instructions, 
       title={Advancing LLM Reasoning Generalists with Preference Trees}, 
       author={Lifan Yuan and Ganqu Cui and Hanbin Wang and Ning Ding and Xingyao Wang and Jia Deng and Boji Shan and Huimin Chen and Ruobing Xie and Yankai Lin and Zhenghao Liu and Bowen Zhou and Hao Peng and Zhiyuan Liu and Maosong Sun},
       year={2024},
-      primaryClass={cs.CL}
+      eprint={2404.02078},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI}
 }
 ```
