@@ -2,7 +2,7 @@
 
 <img src="figures/Eurus-logo.png" width="200px">
 
-**Eurus: A suit of open-source LLMs optimized for reasoning**
+**Eurus: A suite of open-source LLMs optimized for reasoning**
 
 <p align="center">
  <a href="#introduction"> Introduction</a> •
