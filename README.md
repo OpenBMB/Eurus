@@ -29,8 +29,9 @@
 
 <img src="figures/leetcode_vs_theoremqa-1.png" width="500px">
 
-We release a suite of LLMs and a reward model. **Eurus-70B beats GPT-3.5 Turbo in reasoning through a comprehensive benchmarking across 12 tests covering five tasks**, and achieves a 33.3% pass@1 accuracy on LeetCode and 32.6% on TheoremQA, two challenging benchmarks, substantially outperforming existing open-source models by margins more than 13.3%. We also train a reward model that demonstrates especially strong preference modeling performance on reasoning tasks. 
+We release a suite of LLMs and a reward model. **Eurus-70B beats GPT-3.5 Turbo in reasoning through a comprehensive benchmarking across 12 tests covering five tasks**, and achieves a 33.3% pass@1 accuracy on LeetCode and 32.6% on TheoremQA, two challenging benchmarks, substantially outperforming existing open-source models by margins more than 13.3%. Besides, Eurux-8x22B's performance further improves and achieves superb reasoning performance as well as excellent chat & instruction-following capabilities. We also train a reward model that demonstrates especially strong preference modeling performance on reasoning tasks. 
 
+- *Eurux-8x22B-NCA* and *Eurux-8x22B-KTO*: It is SFT and NCA(KTO) fine-tuned from Mixtral-8x22B on all multi-turn trajectory pairs in UltraInteract and all pairs in UltraFeedback.
 - *Eurus-7B-SFT* and *Eurus-70B-SFT*: Fine-tuned from Mistral-7B and CodeLLaMA-70B on all correct actions in UltraInteract, mixing a small proportion of UltraChat, ShareGPT, and OpenOrca examples.
 - *Eurus-7B-KTO* and *Eurus-70B-NCA*: Preference fine-tuned on UltraInteract and UltraFeedback on top of SFT models.
 - *Eurus-RM-7B*: Trained on a mixture of UltraInteract, UltraFeedback, and UltraSafety.
@@ -61,6 +62,21 @@ Below are some statistics about UltraInteract. It consists of 86k instructions, 
 
 
 # Evaluation
+## Eurux-8x22b-NCA and Eurux-8x22b-KTO
+We conducted overall coding, math, reasoning, knowledge, instruction-following, and chat benchmarking. Results are shown below, with the best scores in open-source models **bolded**. Eurux-8x22b-NCA and Eurux-8x22b-KTO achieve superb reasoning performance as well as excellent chat & instruction-following capabilities.
+
+| Models/Benchmarks |   Coding  |           |           |    Math   |           |           | Reasoning | Knowledge | Ins-Following |    Chat   |
+|-------------------|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|:-------------:|:---------:|
+|                   | HumanEval |    MBPP   |  LeetCode |  GSMPLUS  |    MATH   | TheoremQA | BBH (CoT) |    MMLU   |     IFEval    |  MT-Bench |
+| GPT-3.5-Turbo     |   76.8    |   82.5    |   23.3    |   61.2    |   37.8    |   35.6    |   70.1    |   70.0    |     56.6      |   7.94    |
+| GPT-4             |   85.4    |   83.5    |   41.8    |   85.6    |   69.7    |   52.4    |   86.7    |   86.4    |     79.7      |   8.96    |
+| Mixtral-8x7B-Ins  |   50.6    |   50.1    |    5.6    |   49.6    |   25.9    |   20.4    |   73.5    |   70.3    |     48.8      |   8.30    |
+| DS-LM-67B-Chat    |   70.7    |   65.7    |   20.0    |   65.0    |   41.0    |   17.9    |   78.9    |   72.3    |     52.7      |    8.35   |
+| QWen-1.5-72B      |   71.3    |   56.9    |   15.6    |   65.4    |   43.4    |   18.5    |   78.0    |   72.9    |     53.4      | **8.61** |
+| Eurus-70b-NCA     | **79.3** | **71.9** |   33.3    |   62.8    |   41.7    |   32.6    |   80.0    |   59.4    |     49.2      |   7.54    |
+| Eurux-8x22b-KTO   |   71.3    |   68.9    |   29.4    | **68.3** |   48.4    |   35.3    | **83.6** | **75.9** |   **67.1**   |   8.58    |
+| Eurux-8x22b-NCA   |   75.0    |   69.7    | **35.0** |   68.1    | **49.0** | **35.5** |   83.5    |   75.6    |   **67.1**   |   8.46    |
+
 
 ## Eurus-7B and Eurus-70B
 - Eurus, both the 7B and 70B variants, achieve the best overall performance among open-source models of similar sizes. Eurus even outperforms specialized models in corresponding domains in many cases. Notably, Eurus-7B outperforms baselines that are 5× larger, and Eurus-70B achieves better performance than GPT-3.5 Turbo. 
