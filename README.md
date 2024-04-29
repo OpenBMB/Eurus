@@ -12,7 +12,10 @@
 
 </div>
 
-
+# Update News
+- **[2024/04/29]** We release [Eurux-8x22B-NCA](https://huggingface.co/openbmb/Eurux-8x22b-nca) and [Eurux-8x22B-KTO](https://huggingface.co/openbmb/Eurux-8x22b-kto), it is SFT and [NCA](https://arxiv.org/abs/2402.05369) ([KTO](https://arxiv.org/abs/2402.01306)) fine-tuned from [Mixtral-8x22B](https://huggingface.co/mistral-community/Mixtral-8x22B-v0.1) on all multi-turn trajectory pairs in [UltraInteract](https://huggingface.co/datasets/openbmb/UltraInteract_pair) and all pairs in [UltraFeedback](https://huggingface.co/datasets/openbmb/UltraFeedback). It achieves superb reasoning performance as well as excellent chat & instruction-following capabilities.
+- **[2024/04/02]** We release the [UltraInteract](https://huggingface.co/collections/openbmb/eurus-660bc40bec5376b3adc9d1c5) dataset, along with UltraInteract-powered [Eurus-series LLMs](https://huggingface.co/collections/openbmb/eurus-660bc40bec5376b3adc9d1c5) and reward model [Eurus-RM-7B](https://huggingface.co/openbmb/Eurus-RM-7b). Eurus-70B beats GPT-3.5 Turbo in reasoning through a comprehensive benchmarking across 12 tests covering five tasks.
+  
 # Links
 
 - 📜 [Paper](https://arxiv.org/abs/2404.02078)
