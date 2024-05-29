@@ -11,8 +11,19 @@ from vllm import LLM, SamplingParams
 import time
 import re
 
+os.environ["NCCL_IGNORE_DISABLED_P2P"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "true"
+
 import sys
 sys.path.append("./scripts/eval")
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", type=str, default="./eurus-7b-kto-hf")
+parser.add_argument("--input_data", type=str, default="./new_mbpp.json")
+parser.add_argument("--save_dir", type=str, default="./")
+parser.add_argument("--model_type", type=str, default='mistral')
+
+args = parser.parse_args()
 
 os.environ["NCCL_IGNORE_DISABLED_P2P"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
@@ -38,38 +49,47 @@ def generate_sample_batch(question_list):
         trust_remote_code=True,
         tensor_parallel_size=torch.cuda.device_count(),
     )
-    sampling_params = SamplingParams(max_tokens=1024,
+    sampling_params = SamplingParams(max_tokens=512,
                                     temperature=0.0,
                                     n=1,
                                     stop=STOP_WORDS)
 
     outputs = llm.generate(question_list, sampling_params, use_tqdm=False)
-    completions = [match_code(output.outputs[0].text) for output in outputs]
+    completions = []
+    for completion in [output.outputs[0].text.split('```')[0] for output in outputs]:
+        completion = completion.split('```')[0]
+        completions.append(completion)
     return completions
 
-
-from fastchat.conversation import get_conv_template
 def make_signature(code):
     signature = [line for line in code.split("\n") if line.strip().startswith("def ")][0]
     signature = signature.lstrip("def ").replace(" ", "").rstrip(":").strip().replace(",", ", ")
     assert ":" not in signature
     return signature
 
-def make_conv(signature, description, test_list, model_type):
-    conv = get_conv_template(model_type).copy() # only mistral currently
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained(args.model)
+def make_conv(signature, description, test_list):
     description = description.split(" https://www.")[0]
+    #testcase = "\n>>> ".join(test_list)
     testcase = test_list[0]
     prompt = (
                 f"Write Python code to solve the task.\n"
                 f"Write a Python function `{signature}` to solve the following problem: Present code in ```python```\n"
+                #f"```python\n"
                 f"{description}\n"
                 f">>> {testcase}\n"
+                #f"```\n"
             )
-    conv.append_message(conv.roles[0], prompt)
-
-    conv.append_message(conv.roles[1], None)
-    # sometimes you should uncomment the latter part
-    return conv.get_prompt()# + f" ```python\ndef"
+    msg =  [{"role": "user", "content": prompt}]
+    # if "eurus-70b" not in args.model.lower():
+    #msg.append({"role": "assistant", "content": " ```python\ndef"})
+    #     out = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=False)
+    # else:
+    out = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
+    # out = out.lstrip(tokenizer.bos_token).strip()
+    # out = out.rstrip(tokenizer.eos_token).strip()
+    return out+"```python\ndef"
 
 import contextlib
 import signal
@@ -133,19 +153,13 @@ def evaluate(dataset):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="./eurus-7b-kto-hf")
-    parser.add_argument("--input_data", type=str, default="./new_mbpp.json")
-    parser.add_argument("--save_dir", type=str, default="./")
-    parser.add_argument("--model_type", type=str, default='mistral')
-
-    args = parser.parse_args()
+    
 
     dataset = pd.read_json(args.input_data, lines=False)
     dataset["signature"] = dataset.apply(lambda row: make_signature(row["code"]), axis=1)
     for signature in dataset["signature"]:
         STOP_WORDS.append("\n\nprint(" + signature.split("(")[0].strip())
-    dataset["prompt"] = dataset.apply(lambda row: make_conv(row["signature"], row["prompt"], row["test_list"], args.model_type), axis=1)
+    dataset["prompt"] = dataset.apply(lambda row: make_conv(row["signature"], row["prompt"], row["test_list"]), axis=1)
     completions = generate_sample_batch(dataset["prompt"].tolist())
     dataset["completion"] = completions
     del dataset["source_file"]

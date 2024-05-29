@@ -2,10 +2,7 @@ from typing import Mapping
 import re
 import signal
 from contextlib import contextmanager
-from IPython.core.interactiveshell import InteractiveShell
-from IPython.utils import io
 from typing import Any
-from IPython import get_ipython
 import subprocess
 from tqdm import tqdm
 

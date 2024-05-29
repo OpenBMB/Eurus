@@ -16,6 +16,13 @@ import torch
 import re
 import math
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--data_dir", "-d", type=str, default="./")
+parser.add_argument("--save_dir", "-s", type=str, default="./")
+parser.add_argument("--model", type=str, default="./eurus-7b-kto-hf")
+parser.add_argument("--model_type", type=str, default='mistral')
+args = parser.parse_args()
+
 
 import sys
 sys.path.append("../..")
@@ -108,16 +115,16 @@ def match_answer(response):
     # Grade
     return response
 
-from fastchat.conversation import get_conv_template
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained(args.model)
 def make_conv(question, model_type):
-    conv = get_conv_template(model_type).copy() # only mistral currently
-    msg = "Tool available:\n[1] Python interpreter\nWhen you send a message containing Python code to python, it will be executed in a stateful Jupyter notebook environment.\n"
-    msg += "Solve the following math problem step-by-step.\nSimplify your answer as much as possible.\n"
-    msg += question
+    prompt = "Tool available:\n[1] Python interpreter\nWhen you send a message containing Python code to python, it will be executed in a stateful Jupyter notebook environment.\n"
+    prompt += "Solve the following math problem step-by-step.\nSimplify your answer as much as possible.\n"
+    prompt += question
     # add question
-    conv.append_message(conv.roles[0], msg)
-    conv.append_message(conv.roles[1], None)
-    return conv.get_prompt()
+    msg =  [{"role": "user", "content": prompt},]
+    out = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
+    return out
 
     
 
@@ -272,10 +279,5 @@ def run(args, max=-1):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", "-d", type=str, default="./")
-    parser.add_argument("--save_dir", "-s", type=str, default="./")
-    parser.add_argument("--model", type=str, default="./eurus-7b-kto-hf")
-    parser.add_argument("--model_type", type=str, default='mistral')
-    args = parser.parse_args()
+
     run(args)

@@ -11,7 +11,15 @@ from collections import defaultdict
 from vllm import LLM, SamplingParams
 import torch
 import re
-from fastchat.conversation import get_conv_template
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--data_dir", "-d", type=str,
+                    default="./data")
+parser.add_argument("--save_dir", "-s", type=str, default="result")
+parser.add_argument("--model", type=str, default="./eurus-7b-kto-hf")
+parser.add_argument("--model_type", type=str, default='mistral')
+args = parser.parse_args()
 
 
 import sys
@@ -93,13 +101,15 @@ def match_answer(response):
     return is_matched, response
 
 
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained(args.model)
 def make_conv(question, model_type):
-    conv = get_conv_template(model_type).copy() # only mistral currently
-    msg = "Solve the following math problem step-by-step.\n" + "Simplify your answer as much as possible. Present your final answer as \\boxed{Your Answer}.\n" + question
+    prompt = "Solve the following math problem step-by-step.\n" + "Simplify your answer as much as possible. Present your final answer as \\boxed{Your Answer}.\n" + question
     # add question
-    conv.append_message(conv.roles[0], msg)
-    conv.append_message(conv.roles[1], None)
-    return conv.get_prompt()
+    msg =  [{"role": "user", "content": prompt},]
+    out = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
+    return out
+    
 
 
 def run_math_chat(args, max=-1):
@@ -107,6 +117,7 @@ def run_math_chat(args, max=-1):
         model=args.model,
         trust_remote_code=True,
         tensor_parallel_size=torch.cuda.device_count(),
+        #tensor_parallel_size=2,
     )
     total_result = []
     deepmind_result = [0,0]
@@ -243,13 +254,7 @@ def run_math_chat(args, max=-1):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", "-d", type=str,
-                        default="./data")
-    parser.add_argument("--save_dir", "-s", type=str, default="result")
-    parser.add_argument("--model", type=str, default="./eurus-7b-kto-hf")
-    parser.add_argument("--model_type", type=str, default='mistral')
-    args = parser.parse_args()
+    
 
 
     run_math_chat(args)

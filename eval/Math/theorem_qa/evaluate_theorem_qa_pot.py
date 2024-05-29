@@ -13,25 +13,20 @@ from vllm import LLM, SamplingParams
 import torch
 import time
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", type=str, default="./eurus-7b-kto-hf")
+parser.add_argument("--input_data", type=str, default="./theorem_qa.json")
+parser.add_argument("--save_dir", type=str, default="./")
+parser.add_argument("--model_type", type=str, default='mistral')
+args = parser.parse_args()
+
+
 import sys
 sys.path.append("../..")
 from utils.python_interpreter import postprocess_completions
 
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
-def create_reader_request(example: Dict[str, Any]) -> str:
-    string = f"Question: {example['Question']}"
-    return string
-
-
-openai.api_key = "EMPTY"
-from fastchat.conversation import get_conv_template
-SYSTEMQ = """You are a mathematician, you are supposed to answer the given question. You need to output the answer in your final sentence like "Therefore, the answer is ...". The answer can only be one of the following forms:
-1. a numerical value like 0.1, no symbol at all.
-2. a list of number like [2, 3, 4].
-3. True/False.
-4. an option like (a), (b), (c), (d)
-"""
 
 def generate_sample_batch(question_list):
     llm = LLM(
@@ -49,34 +44,31 @@ def generate_sample_batch(question_list):
     completions = postprocess_completions(outputs)
     return outputs, completions
 
-from fastchat.conversation import get_conv_template
-def make_conv(question, answer_type, id, model_type):
-    conv = get_conv_template(model_type).copy() # only mistral currently
-    # if answer_type not in ["bool", "option"] and id not in impossible_questions:
-    conv.system_message = "Tool available:\n[1] Python interpreter\nWhen you send a message containing Python code to python, it will be executed in a stateful Jupyter notebook environment.\n"
-    conv.system_message += """Solve the following math problem step-by-step.\nSimplify your answer as much as possible. The answer can only be one of the following forms:
+
+def create_reader_request(example: Dict[str, Any]) -> str:
+    string = f"Question: {example['Question']}"
+    return string
+
+
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained(args.model)
+def make_conv(question):
+    prompt = "Tool available:\n[1] Python interpreter\nWhen you send a message containing Python code to python, it will be executed in a stateful Jupyter notebook environment.\n"
+    prompt += """Solve the following math problem step-by-step.\nSimplify your answer as much as possible. The answer can only be one of the following forms:
 1. a numerical value like 0.1, no symbol at all.
 2. a list of number like [2, 3, 4].
 3. True/False.
 4. an option like (a), (b), (c), (d)\n
 """
-    conv.append_message(conv.roles[0], question)
-    conv.append_message(conv.roles[1], None)
-    return conv.get_prompt()
-
+    # add question
+    msg =  [{"role": "user", "content": prompt + question},]
+    out = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
+    return out
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="./eurus-7b-kto-hf")
-    parser.add_argument("--input_data", type=str, default="./theorem_qa.json")
-    parser.add_argument("--save_dir", type=str, default="./")
-    parser.add_argument("--model_type", type=str, default='mistral')
-    args = parser.parse_args()
-
-
     test_set = pd.read_json(args.input_data)
-    test_set["prompt"] = test_set.apply(lambda row: make_conv(create_reader_request(row), row["Answer_type"], row["id"],args.model_type), axis=1)
+    test_set["prompt"] = test_set.apply(lambda row: make_conv(create_reader_request(row)), axis=1)
     outputs, completions = generate_sample_batch(test_set["prompt"].tolist())
     test_set["output"] = outputs
     test_set["completion"] = completions

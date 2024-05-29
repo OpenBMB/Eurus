@@ -1,14 +1,10 @@
 import os
 import re
-import time
-import openai
 import argparse
-import traceback
-import fire
 import pandas as pd
-from tqdm import tqdm
-from typing import List
 from datasets import Dataset
+
+
 
 
 import sys
@@ -34,28 +30,19 @@ STOP_WORDS =["\nassert", "assert"]
 from vllm import LLM, SamplingParams
 import torch
 
-def match_code(s):
-    if '```python' in s:
-        pattern = r'```python(.*?)```'
-        return re.findall(pattern, s, re.DOTALL)[0]
-    elif '```' in s:
-        pattern = r'```(.*?)```'
-        return re.findall(pattern, s, re.DOTALL)[0]
-    else:
-        return s
-
 def generate_sample_batch(question_list):
     llm = LLM(
         model=args.model,
         trust_remote_code=True,
-        tensor_parallel_size=torch.cuda.device_count(),
+        tensor_parallel_size=torch.cuda.device_count()
     )
     sampling_params = SamplingParams(max_tokens=1024,
                                     temperature=args.temperature,
                                     n=1,
-                                    stop=[],)
+                                    stop=["<|eot_id|>"],)
     
     outputs = llm.generate(question_list, sampling_params, use_tqdm=False)
+    #completions = [match_code(output.outputs[0].text) for output in outputs]
     completions = [output.outputs[0].text.split('```')[0] for output in outputs]
     return completions
 
@@ -65,9 +52,9 @@ def make_signature(example):
             ).group(1)
     return signature
 
-from fastchat.conversation import get_conv_template
-def make_conv(example,model_type):
-    conv = get_conv_template(model_type).copy() # only mistral currently
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained(args.model)
+def make_conv(example):
     signature = re.search(
                 rf"def\s+({example['entry_point']}.*?):\s*\n", example["prompt"]
             ).group(1)
@@ -85,12 +72,21 @@ def make_conv(example,model_type):
                 f"Write Python code to solve the task.\n"
                 f"Write a Python function `{signature}` to solve the following problem: Present code in ```python```\n"
                 f"```python\n"
-                f"{example['prompt']}\n"
+                #f"{description}\n"
+                f"{example['prompt']}"
                 f"```\n"
             )
-    conv.append_message(conv.roles[0], prompt)
-    conv.append_message(conv.roles[1], None)
-    return conv.get_prompt() + f" ```python\n{example['prompt']}"
+
+    msg =  [{"role": "user", "content": prompt}]
+    # if "eurus-70b" not in args.model.lower():
+    #msg.append({"role": "assistant", "content": "```Python\n"})
+    out = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
+    # else:
+    #      out = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=False)
+    #out = out.rstrip(tokenizer.eos_token).strip()
+    return out + " ```python\ndef"
+
+
 
 def entry_point(
     sample_file: str,
@@ -112,15 +108,16 @@ def entry_point(
 samples = []
 problems = Dataset.from_pandas(pd.DataFrame(problems).T)
 problems = problems.map(lambda x: {"signature": make_signature(x)}, cache_file_name="../../cache/human_eval", load_from_cache_file=False)
-problems = problems.map(lambda x: {"instruction": make_conv(x, args.model_type)}, cache_file_name="../../cache/human_eval", load_from_cache_file=False)
+problems = problems.map(lambda x: {"instruction": make_conv(x)}, cache_file_name="../../cache/human_eval", load_from_cache_file=False)
 
 completions = generate_sample_batch(problems["instruction"])
 problems = problems.add_column("completion", completions)
-problems = problems.map(lambda x: {"completion": x["prompt"] + x["completion"]})
+problems = problems.map(lambda x: {"completion": "def "+ x["completion"]})
+#problems = problems.map(lambda x: {"completion": x["prompt"] + x["completion"]})
 samples = problems.to_pandas().to_dict(orient="records")
 
 output_filepath = os.path.join(args.save_dir, "samples.jsonl")
 write_jsonl(output_filepath, samples)
 
-fire.Fire(entry_point(output_filepath))
+entry_point(output_filepath)
 

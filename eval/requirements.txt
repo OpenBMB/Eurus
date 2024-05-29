@@ -1,11 +1,5 @@
 ### basic requirements
 openai==0.28
-vllm
-pandas
-fschat
-datasets
-IPython
-fire
 backoff
 scipy
 nltk
@@ -15,8 +9,11 @@ jsonlines
 func_timeout
 langdetect
 immutabledict
+fschat
+vllm==0.3.3
 datasets
 transformers==4.39.1
 thefuzz
 absl-py
-
+fire
+accelerate
