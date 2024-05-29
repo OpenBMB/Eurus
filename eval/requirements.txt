@@ -4,13 +4,13 @@ backoff
 scipy
 nltk
 sympy==1.12
-antlr4-python3-runtime==4.11
+antlr4-python3-runtime==4.11.0
 jsonlines
 func_timeout
 langdetect
 immutabledict
 fschat
-vllm==0.3.3
+vllm==0.2.7
 datasets
 transformers==4.39.1
 thefuzz
