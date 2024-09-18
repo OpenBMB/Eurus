@@ -1,11 +1,13 @@
 MODEL_DIR=$1
 if [ -z "$MODEL_DIR" ]; then
-    MODEL_DIR="/data/sbj/eurus-70b-sft"
+    MODEL_DIR="openbmb/Eurus-7b-sft"
 fi
 MODEL_NAME=$(basename "$MODEL_DIR")
-OUTPUT_DIR="/data/checkpoints/results/$MODEL_NAME" 
+OUTPUT_DIR="./results/$MODEL_NAME" 
 mkdir -p $OUTPUT_DIR
 mkdir -p cache
+
+
 
 # coding_human_eval
 echo "running human_eval evaluation"
@@ -115,7 +117,7 @@ python3 evaluate_theorem_qa_pot.py \
   --save_dir $OUTPUT_DIR/theorem_qa_pot/
 cd ../..
 
-# reasoning_bbh
+# reasoning_bbh cot
 echo "running bbh evaluation"
 mkdir -p $OUTPUT_DIR/bbh
 cd Reasoning/bbh
@@ -124,7 +126,8 @@ python3 evaluate_bbh.py \
   --data_filepath ./test_prompts.json \
   --output_filepath $OUTPUT_DIR/bbh/res.jsonl \
   --model_type mistral \
-  --n_processes 8
+  --n_processes 8 \
+  --is_cot
 cd ../..
 
 # ins-Following-if_eval
@@ -154,3 +157,4 @@ python3 -u evaluate_mmlu.py \
 
 
 
+echo "All Evals Finished!"

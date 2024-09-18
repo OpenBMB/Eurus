@@ -28,9 +28,7 @@ args = parser.parse_args()
 
 import sys
 sys.path.append("../..")
-from utils.math_equivalence import is_equiv
-from utils.util import clean_numbers, last_boxed_only, last_boxed_only_string
-from utils.grader import math_equal
+from utils import evaluate_math
 
 os.environ["NCCL_IGNORE_DISABLED_P2P"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
@@ -47,72 +45,6 @@ def generate_sample_batch(question_list):
     outputs = llm.generate(question_list, sampling_params, use_tqdm=False)
     completions = [output.outputs[0].text for output in outputs]
     return completions
-
-
-def remove_boxed(s):
-    left = "\\boxed{"
-    try:
-        assert s[:len(left)] == left
-        assert s[-1] == "}"
-        return s[len(left):-1]
-    except:
-        return None
-
-def _last_boxed_only_string(string):
-        idx = string.rfind("\\boxed")
-        if idx < 0:
-            idx = string.rfind("\\fbox")
-            if idx < 0:
-                return None
-
-        i = idx
-        left_brace_idx = None
-        right_brace_idx = None
-        num_left_braces_open = 0
-        while i < len(string):
-            if string[i] == "{":
-                num_left_braces_open += 1
-                if left_brace_idx is None:
-                    left_brace_idx = i
-            elif string[i] == "}":
-                num_left_braces_open -= 1
-                if num_left_braces_open == 0:
-                    right_brace_idx = i
-                    break
-
-            i += 1
-        
-        if left_brace_idx is None or right_brace_idx is None:
-            return None
-
-        return string[left_brace_idx + 1: right_brace_idx].strip()
-
-def match_answer(response):
-    is_matched = False
-    ans_marker = 'answer:\n'
-    ans_idx = response.lower().rfind(ans_marker)
-    if ans_idx != -1:
-        is_matched = True
-        response = response[ans_idx + len(ans_marker):].strip()
-        if response.endswith("\n"):
-            response = response[:-2]
-            
-    ans_marker = 'answer: '
-    ans_idx = response.lower().rfind(ans_marker)
-    if ans_idx != -1:
-        is_matched = True
-        response = response[ans_idx + len(ans_marker):].strip()
-        if response.endswith("\n"):
-            response = response[:-2]
-
-    # Find boxed
-    ans_boxed = _last_boxed_only_string(response)
-    if ans_boxed:
-        is_matched = True
-        response = ans_boxed
-
-    # Grade
-    return is_matched, response
 
 from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained(args.model)
@@ -157,21 +89,11 @@ def run(args, max=-1):
 
         levels.append(prob_level)
         types.append(prob_type)
-        is_matched, model_output = match_answer(model_output)
+        is_matched, equiv, model_output = evaluate_math(model_output, answer)
         matches.append(is_matched)
         outputs.append(model_output)
         answers.append(answer)
-        
-        try:
-            if "\pi" in model_output or "\pi" in answer:
-                equivs = []
-                for pi in [math.pi, 3.14]:
-                    equivs.append(math_equal(model_output, answer, timeout=True, pi=pi))
-                equiv = any(equivs) 
-            else:
-                equiv = math_equal(model_output, answer, timeout=True)
-        except:
-            equiv = False
+
         fnames_list.append(equiv)
         if (prob_level, prob_type) in cors:
             cors[(prob_level, prob_type)].append(equiv)

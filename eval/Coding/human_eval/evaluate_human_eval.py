@@ -36,10 +36,11 @@ def generate_sample_batch(question_list):
         trust_remote_code=True,
         tensor_parallel_size=torch.cuda.device_count()
     )
+    global EOS_TOKEN
     sampling_params = SamplingParams(max_tokens=1024,
                                     temperature=args.temperature,
                                     n=1,
-                                    stop=["<|eot_id|>"],)
+                                    stop=[EOS_TOKEN],)
     
     outputs = llm.generate(question_list, sampling_params, use_tqdm=False)
     #completions = [match_code(output.outputs[0].text) for output in outputs]
@@ -54,6 +55,8 @@ def make_signature(example):
 
 from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained(args.model)
+global EOS_TOKEN
+EOS_TOKEN = tokenizer.eos_token
 def make_conv(example):
     signature = re.search(
                 rf"def\s+({example['entry_point']}.*?):\s*\n", example["prompt"]
@@ -72,7 +75,7 @@ def make_conv(example):
                 f"Write Python code to solve the task.\n"
                 f"Write a Python function `{signature}` to solve the following problem: Present code in ```python```\n"
                 f"```python\n"
-                #f"{description}\n"
+                # f"{description}\n"
                 f"{example['prompt']}"
                 f"```\n"
             )
@@ -85,6 +88,7 @@ def make_conv(example):
     #      out = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=False)
     #out = out.rstrip(tokenizer.eos_token).strip()
     return out + " ```python\ndef"
+    # return out
 
 
 
@@ -113,9 +117,10 @@ problems = problems.map(lambda x: {"instruction": make_conv(x)}, cache_file_name
 completions = generate_sample_batch(problems["instruction"])
 problems = problems.add_column("completion", completions)
 problems = problems.map(lambda x: {"completion": "def "+ x["completion"]})
-#problems = problems.map(lambda x: {"completion": x["prompt"] + x["completion"]})
+# problems = problems.map(lambda x: {"completion": x["prompt"] + x["completion"]})
 samples = problems.to_pandas().to_dict(orient="records")
 
+os.makedirs(args.save_dir, exist_ok=True)
 output_filepath = os.path.join(args.save_dir, "samples.jsonl")
 write_jsonl(output_filepath, samples)
 

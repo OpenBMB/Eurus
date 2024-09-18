@@ -24,9 +24,7 @@ args = parser.parse_args()
 
 import sys
 sys.path.append("../..")
-from utils.math_equivalence import is_equiv
-from utils.util import clean_numbers, last_boxed_only, last_boxed_only_string
-from utils.grader import math_equal
+from utils import evaluate_math
 
 os.environ["NCCL_IGNORE_DISABLED_P2P"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
@@ -143,15 +141,9 @@ def run_math_chat(args, max=-1):
             completions = generate_sample_batch(conv_list,llm)
             for problem_data, model_output in zip(test_problem, completions):
                 answer = problem_data["Output Answer"][0]
-                is_matched, model_output = match_answer(model_output)
+                is_matched, equiv, model_output = evaluate_math(model_output, answer)
                 outputs.append(model_output)
                 answers.append(answer)
-
-                try:
-                    # equiv = is_equiv(model_output, answer)
-                    equiv = math_equal(model_output, answer)
-                except:
-                    equiv = False
                 fnames_list.append(equiv)
                 if equiv:
                     correct += 1
@@ -163,12 +155,8 @@ def run_math_chat(args, max=-1):
             completions = generate_sample_batch(conv_list,llm)
             answers = all_answers
             for answer, model_output in zip(all_answers, completions):
-                is_matched, model_output = match_answer(model_output)
+                is_matched, equiv, model_output = evaluate_math(model_output, answer)
                 outputs.append(model_output)
-                try:
-                    equiv = math_equal(model_output, answer)
-                except:
-                    equiv = False
                 fnames_list.append(equiv)
                 if equiv:
                     correct += 1
@@ -178,12 +166,8 @@ def run_math_chat(args, max=-1):
             answers = [all_problems[problem]["perturbation_questions"][sub_problem]["answer"] for problem in all_problems for sub_problem in all_problems[problem]["perturbation_questions"] ]
             completions = generate_sample_batch(conv_list,llm)
             for answer, model_output in zip(answers, completions):
-                is_matched, model_output = match_answer(model_output)
+                is_matched, equiv, model_output = evaluate_math(model_output, answer)
                 outputs.append(model_output)
-                try:
-                    equiv = math_equal(model_output, answer)
-                except:
-                    equiv = False
                 fnames_list.append(equiv)
                 if equiv:
                     correct += 1
@@ -194,12 +178,8 @@ def run_math_chat(args, max=-1):
             completions = generate_sample_batch(conv_list,llm)
             answers = all_answers
             for answer, model_output in zip(all_answers, completions):
-                is_matched, model_output = match_answer(model_output)
+                is_matched, equiv, model_output = evaluate_math(model_output, answer)
                 outputs.append(model_output)
-                try:
-                    equiv = math_equal(model_output, answer)
-                except:
-                    equiv = False
                 fnames_list.append(equiv)
                 if equiv:
                     correct += 1

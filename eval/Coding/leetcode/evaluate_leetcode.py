@@ -50,10 +50,11 @@ def generate_sample_batch(question_list):
         trust_remote_code=True,
         tensor_parallel_size=torch.cuda.device_count(),
     )
-    sampling_params = SamplingParams(max_tokens=2048,
+    global EOS_TOKEN
+    sampling_params = SamplingParams(max_tokens=1024,
                                     temperature=args.temperature,
                                     n=1,
-                                    stop=["<>"],)
+                                    stop=[EOS_TOKEN],)
     
     outputs = llm.generate(question_list, sampling_params, use_tqdm=False)
     completions = ["```python\n" +  match_code(output.outputs[0].text) + "\n```" for output in outputs]
@@ -70,33 +71,24 @@ def generate_sample_batch(question_list):
 #     out = out.rstrip(tokenizer.eos_token).strip()
 #     return out
 
-# def make_conv(example):
-#     msg = [
-#         {"role": "user", "content": example["prompt_sft"]  
-#         + "\nYou need first write a step-by-step outline and then write the code."
-#         }
-#     ]
-#     chat = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
-#     return chat + " ```python\n"
-
-from fastchat.conversation import get_conv_template
-def make_conv(example):
-    conv = get_conv_template('mistral').copy() # only mistral currently
-    #msg = "Write Python code to solve the task.\n" + example["prompt_sft"] + "\nYou need first write a step-by-step outline and then write the code."
-    msg = example["prompt_sft"] + "\nYou need first write a step-by-step outline and then write the code."
-    conv.append_message(conv.roles[0], msg)
-    #conv.append_message(conv.roles[1], None)
-    conv.append_message(conv.roles[1], None)
-    # print(conv.get_prompt() + f"```python\n{example['prompt']}")
-    # exit()
-    return conv.get_prompt() + " ```python\n"
-
-
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained(args.model)
+global EOS_TOKEN
+EOS_TOKEN = tokenizer.eos_token
+def make_conv_hf(example, tokenizer):
+    # msg = [
+    #     {"role": "user", "content": example["prompt_sft"] + "\nYou need first write a step-by-step outline and then write the code."}
+    # ]
+    msg = [
+        {"role": "user", "content": example["prompt_sft"]}
+    ]
+    chat = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
+    return chat + "```python"
 
 
 samples = []
 del problems["start_time"]
-problems["instruction"] = problems.apply(lambda row: make_conv(row), axis=1)
+problems["instruction"] = problems.apply(lambda row: make_conv_hf(row, tokenizer), axis=1)
 
 completions = generate_sample_batch(problems["instruction"])
 problems["output"] = completions

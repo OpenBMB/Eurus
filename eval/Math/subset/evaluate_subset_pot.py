@@ -17,9 +17,7 @@ import re
 
 import sys
 sys.path.append("../..")
-from utils.math_equivalence import is_equiv
-from utils.util import clean_numbers, last_boxed_only, last_boxed_only_string
-from utils.grader import math_equal
+from utils import evaluate_math
 from utils.python_interpreter import postprocess_completions
 
 parser = argparse.ArgumentParser()
@@ -47,71 +45,6 @@ def generate_sample_batch(question_list,llm):
     return completions
 
 
-def remove_boxed(s):
-    left = "\\boxed{"
-    try:
-        assert s[:len(left)] == left
-        assert s[-1] == "}"
-        return s[len(left):-1]
-    except:
-        return None
-
-def _last_boxed_only_string(string):
-        idx = string.rfind("\\boxed")
-        if idx < 0:
-            idx = string.rfind("\\fbox")
-            if idx < 0:
-                return None
-
-        i = idx
-        left_brace_idx = None
-        right_brace_idx = None
-        num_left_braces_open = 0
-        while i < len(string):
-            if string[i] == "{":
-                num_left_braces_open += 1
-                if left_brace_idx is None:
-                    left_brace_idx = i
-            elif string[i] == "}":
-                num_left_braces_open -= 1
-                if num_left_braces_open == 0:
-                    right_brace_idx = i
-                    break
-
-            i += 1
-
-        if left_brace_idx is None or right_brace_idx is None:
-            return None
-
-        return string[left_brace_idx + 1: right_brace_idx].strip()
-
-def match_answer(response):
-    is_matched = False
-    ans_marker = 'answer:\n'
-    ans_idx = response.lower().rfind(ans_marker)
-    if ans_idx != -1:
-        is_matched = True
-        response = response[ans_idx + len(ans_marker):].strip()
-        if response.endswith("\n"):
-            response = response[:-2]
-
-    ans_marker = 'answer: '
-    ans_idx = response.lower().rfind(ans_marker)
-    if ans_idx != -1:
-        is_matched = True
-        response = response[ans_idx + len(ans_marker):].strip()
-        if response.endswith("\n"):
-            response = response[:-2]
-
-    # Find boxed
-    ans_boxed = _last_boxed_only_string(response)
-    if ans_boxed:
-        is_matched = True
-        response = ans_boxed
-
-    # Grade
-    return response
-
 
 from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained(args.model)
@@ -123,7 +56,7 @@ def make_conv(question, model_type):
     # msg =  [{"role": "user", "content": prompt},]
     # out = tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
     # return out
-    system = "Tool available:\n[1] Python interpreter\nWhen you send a message containing Python code to python, it will be executed in a stateful Jupyter notebook environment.\n"
+    system = "Tool available:\n[1] Python interpreter\nWhen you send a message containing Python code to python, it will be executed in a stateful Jupyter notebook environment. Present code in ```python```\n"
     content = "Solve the following math problem step-by-step.\n" + "Simplify your answer as much as possible. Present your final answer as \\boxed{Your Answer}.\n" + question
     # add question
     
@@ -172,15 +105,9 @@ def run(args, max=-1):
             completions = generate_sample_batch(conv_list,llm)
             for problem_data, model_output in tqdm(zip(test_problem, completions), total=len(test_problem), desc="Matching"):
                 answer = problem_data["Output Answer"][0]
-                model_output = match_answer(model_output)
+                is_matched, equiv, model_output = evaluate_math(model_output, answer)
                 outputs.append(model_output)
                 answers.append(answer)
-
-                try:
-                    # equiv = is_equiv(model_output, answer)
-                    equiv = math_equal(model_output, answer)
-                except:
-                    equiv = False
                 fnames_list.append(equiv)
                 if equiv:
                     correct += 1
@@ -192,13 +119,8 @@ def run(args, max=-1):
             completions = generate_sample_batch(conv_list,llm)
             answers = all_answers
             for answer, model_output in tqdm(zip(all_answers, completions), total=len(all_answers), desc="Matching"):
-                model_output = match_answer(model_output)
+                is_matched, equiv, model_output = evaluate_math(model_output, answer)
                 outputs.append(model_output)
-                try:
-                    # equiv = is_equiv(model_output, answer)
-                    equiv = math_equal(model_output, answer)
-                except:
-                    equiv = False
                 fnames_list.append(equiv)
                 if equiv:
                     correct += 1
@@ -208,13 +130,8 @@ def run(args, max=-1):
             answers = [all_problems[problem]["perturbation_questions"][sub_problem]["answer"] for problem in all_problems for sub_problem in all_problems[problem]["perturbation_questions"] ]
             completions = generate_sample_batch(conv_list,llm)
             for answer, model_output in zip(answers, completions):
-                model_output = match_answer(model_output)
+                is_matched, equiv, model_output = evaluate_math(model_output, answer)
                 outputs.append(model_output)
-                try:
-                    # equiv = is_equiv(model_output, answer)
-                    equiv = math_equal(model_output, answer)
-                except:
-                    equiv = False
                 fnames_list.append(equiv)
                 if equiv:
                     correct += 1
@@ -225,13 +142,8 @@ def run(args, max=-1):
             completions = generate_sample_batch(conv_list,llm)
             answers = all_answers
             for answer, model_output in tqdm(zip(all_answers, completions), total=len(all_answers), desc="Matching"):
-                model_output = match_answer(model_output)
+                is_matched, equiv, model_output = evaluate_math(model_output, answer)
                 outputs.append(model_output)
-                try:
-                    # equiv = is_equiv(model_output, answer)
-                    equiv = math_equal(model_output, answer)
-                except:
-                    equiv = False
                 fnames_list.append(equiv)
                 if equiv:
                     correct += 1

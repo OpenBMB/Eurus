@@ -10,7 +10,12 @@ import os
 class PythonREPL():
     def __init__(self, timeout=5, tmp_file="cache/tmp"):
         self.timeout = timeout
-        self.tmp_file = tmp_file
+        
+        import datetime
+        import random
+        current_time = datetime.datetime.now().strftime("_%Y%m%d_%H%M%S")
+        random_number = random.random()
+        self.tmp_file = tmp_file + current_time + str(random_number)
         os.system(f"touch {self.tmp_file}.py" )
 
     @contextmanager
@@ -69,6 +74,7 @@ def postprocess_completion(executor, completion):
 
     executions = ["!" + code for code in re.findall(r"```bash(.*?)```", completion, re.DOTALL) if "!" not in code]
     executions.extend(re.findall(r"```python(.*?)```", completion, re.DOTALL))
+    executions.extend(re.findall(r"<execute>(.*?)</execute>", completion, re.DOTALL))
     
     if len(executions) == 0: # directly return cot result
         return completion
@@ -94,18 +100,33 @@ def postprocess_completion(executor, completion):
         return extracted_solution
 
 
-def postprocess_completions(completion_list):
-    executor = PythonREPL()
+# def postprocess_completions(completion_list):
+#     executor = PythonREPL()
     
-    solution_list = []
-    for completion in completion_list:
-        solution_list.append(postprocess_completion(executor, completion))
+#     solution_list = []
+#     for completion in completion_list:
+#         solution_list.append(postprocess_completion(executor, completion))
 
+#     del executor
+
+#     return solution_list
+
+
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
+def postprocess_completion_wrapper(completion):
+    executor = PythonREPL()
+    result = postprocess_completion(executor, completion)
+    os.system(f"rm {executor.tmp_file}.py")
     del executor
+    return result
 
+def postprocess_completions(completion_list):
+    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+        futures = [executor.submit(postprocess_completion_wrapper, completion) for completion in completion_list]
+        solution_list = [future.result() for future in as_completed(futures)]
     return solution_list
-
-
 
 if __name__ == "__main__":
     code = """
@@ -132,4 +153,10 @@ Answer:
 12
 
 """
-    postprocess_completion(code)
+    import pandas as pd
+    import json
+    code_list = pd.read_json("../Math/math/output_llama3-8b-new-mix.json").to_dict("records")
+    completions = [code["completions"] for code in code_list]
+    processed_completions = postprocess_completions(completions[:10])
+    print(completions[:10])
+    print(processed_completions[:10])
